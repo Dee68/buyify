@@ -1,0 +1,101 @@
+# ============================
+# Global Python / Django Ignore
+# ============================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+env/
+venv/
+ENV/
+backend/.venv/
+backend/venv/
+
+# Environment variables
+*.env
+.env
+**/.env
+!.env.example
+
+# Django database
+*.sqlite3
+*.db
+
+# Logs
+*.log
+*.out
+*.err
+
+# Django settings overrides
+local_settings.py
+
+# Media & Static (runtime generated)
+media/
+staticfiles/
+static/
+
+# Translation files
+*.pot
+*.mo
+
+# Test cache
+.pytest_cache/
+
+
+# ============================
+# Frontend (Node / React / Vue)
+# ============================
+
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.cache/
+.next/
+out/
+
+# Vite / Webpack / Parcel
+*.local
+*.lock
+
+# Environment variables for frontend
+frontend/.env*
+!frontend/.env.example
+
+
+# ============================
+# Docker
+# ============================
+
+# Docker artifacts
+*.pid
+*.seed
+docker-data/
+docker_volume_*/
+
+
+# ============================
+# Editor / OS Files
+# ============================
+
+# VSCode
+.vscode/
+
+# PyCharm / JetBrains
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Linux
+*~
