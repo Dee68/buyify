@@ -172,3 +172,57 @@ def test_products_list_second_page(client):
 
     assert response.status_code == 200
     assert len(response.data["results"]) == 5
+
+# =========================
+# Role-base
+# =========================
+
+@pytest.mark.django_db
+def test_non_admin_cannot_create_product(api_client, user):
+    api_client.force_authenticate(user=user)
+
+    url = reverse("products:products-list")
+    response = api_client.post(
+        url,
+        {
+            "name": "Blocked",
+            "description": "No access",
+            "price": "10.00",
+            "stock": 1,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 403
+
+@pytest.mark.django_db
+def test_admin_can_create_product(api_client, admin_user):
+    api_client.force_authenticate(user=admin_user)
+
+    url = reverse("products:products-list")
+    response = api_client.post(
+        url,
+        {
+            "name": "Admin Product",
+            "description": "Allowed",
+            "price": "15.00",
+            "stock": 5,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+
+@pytest.mark.django_db
+def test_non_admin_cannot_delete_product(api_client, user):
+    product = Product.objects.create(
+        name="Protected",
+        price=5,
+        stock=1,
+    )
+
+    api_client.force_authenticate(user=user)
+    url = reverse("products:products-detail", args=[product.id])
+    response = api_client.delete(url)
+
+    assert response.status_code == 403
