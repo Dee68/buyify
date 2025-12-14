@@ -1,5 +1,11 @@
 from rest_framework import serializers # type: ignore
-from .models import Product
+from .models import Product, Category
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("id", "name", "slug", "created_at")
+        read_only_fields = ("id", "slug", "created_at")
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
