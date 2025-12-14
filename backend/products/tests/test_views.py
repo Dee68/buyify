@@ -2,6 +2,7 @@ import pytest # type: ignore
 from django.urls import reverse # type: ignore
 from products.models import Product
 from rest_framework.test import APIClient # type: ignore
+from rest_framework_simplejwt.tokens import RefreshToken # type: ignore
 
 
 @pytest.mark.django_db
@@ -17,7 +18,6 @@ def test_list_products(client):
 
 @pytest.mark.django_db
 def test_create_product(client, admin_user):
-    #client.force_login(admin_user)
     client = APIClient()
 
     client.force_authenticate(user=admin_user)
@@ -32,3 +32,105 @@ def test_create_product(client, admin_user):
 
     assert response.status_code == 201
     assert response.data["name"] == "New Product"
+
+@pytest.mark.django_db
+def test_retrieve_product(client):
+    product = Product.objects.create(
+        name="Test Product",
+        description="A product",
+        price=19.99,
+        stock=5,
+    )
+
+    url = reverse("products:products-detail", args=[product.id])
+    response = client.get(url)
+
+    assert response.status_code == 200
+    assert response.data["name"] == "Test Product"
+    assert response.data["price"] == "19.99"
+
+@pytest.mark.django_db
+def test_update_product_authenticated(client, admin_user):
+    product = Product.objects.create(
+        name="Old Name",
+        description="Old desc",
+        price=10.00,
+        stock=3,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=admin_user)
+
+    url = reverse("products:products-detail", args=[product.id])
+    response = client.put(
+        url,
+        {
+            "name": "Updated Name",
+            "description": "Updated desc",
+            "price": "15.50",
+            "stock": 10,
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    product.refresh_from_db()
+    assert product.name == "Updated Name"
+    assert product.price == 15.50
+    assert product.stock == 10
+
+@pytest.mark.django_db
+def test_update_product_unauthenticated(client):
+    product = Product.objects.create(
+        name="Readonly",
+        description="No edit",
+        price=5.00,
+        stock=1,
+    )
+
+    url = reverse("products:products-detail", args=[product.id])
+    response = client.put(
+        url,
+        {
+            "name": "Hacked",
+            "description": "Nope",
+            "price": "99.99",
+            "stock": 99,
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 401
+
+@pytest.mark.django_db
+def test_delete_product_authenticated(client, admin_user):
+    product = Product.objects.create(
+        name="Delete Me",
+        description="Temp",
+        price=8.00,
+        stock=2,
+    )
+    client = APIClient()
+    
+    refresh = RefreshToken.for_user(admin_user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+    url = reverse("products:products-detail", args=[product.id])
+    response = client.delete(url)
+
+    assert response.status_code == 204
+    assert Product.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_product_unauthenticated(client):
+    product = Product.objects.create(
+        name="Protected",
+        description="Cannot delete",
+        price=12.00,
+        stock=4,
+    )
+    url = reverse("products:products-detail", args=[product.id])
+    response = client.delete(url)
+
+    assert response.status_code == 401

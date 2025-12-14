@@ -1,5 +1,5 @@
-import pytest
-from django.contrib.auth import get_user_model
+import pytest # type: ignore
+from django.contrib.auth import get_user_model # type: ignore
 
 User = get_user_model()
 
