@@ -54,6 +54,14 @@ logs:
 clean:
 	docker compose down --remove-orphans -v
 
+# =========================
+# Testing
+
+.PHONY: test
+test:
+	docker compose run --rm web pytest -q
+
+
 # =====================
 # Production commands
 # =====================
