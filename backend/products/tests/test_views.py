@@ -172,4 +172,3 @@ def test_products_list_second_page(client):
 
     assert response.status_code == 200
     assert len(response.data["results"]) == 5
-
