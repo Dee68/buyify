@@ -14,7 +14,10 @@ def test_list_products(client):
     response = client.get(url)
 
     assert response.status_code == 200
-    assert len(response.data) == 2
+    #assert len(response.data) == 2
+    assert response.data["count"] == 2
+    assert len(response.data["results"]) == 2
+
 
 @pytest.mark.django_db
 def test_create_product(client, admin_user):
@@ -134,3 +137,39 @@ def test_delete_product_unauthenticated(client):
     response = client.delete(url)
 
     assert response.status_code == 401
+
+@pytest.mark.django_db
+def test_products_list_is_paginated(client):
+    for i in range(15):
+        Product.objects.create(
+            name=f"Product {i}",
+            description="Test",
+            price=10.00,
+            stock=5,
+        )
+
+    url = reverse("products:products-list")
+    response = client.get(url)
+
+    assert response.status_code == 200
+    assert "results" in response.data
+    assert "count" in response.data
+    assert len(response.data["results"]) == 10
+    assert response.data["count"] == 15
+
+@pytest.mark.django_db
+def test_products_list_second_page(client):
+    for i in range(15):
+        Product.objects.create(
+            name=f"Product {i}",
+            description="Test",
+            price=10.00,
+            stock=5,
+        )
+
+    url = reverse("products:products-list")
+    response = client.get(url, {"page": 2})
+
+    assert response.status_code == 200
+    assert len(response.data["results"]) == 5
+
