@@ -1,5 +1,5 @@
 from rest_framework import viewsets, permissions, filters # type: ignore
-from .models import Product
+from .models import Product,Category
 from .serializers import ProductSerializer
 from .permissions import IsAdminOrReadOnly
 
@@ -10,4 +10,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['price', 'created_at']
+
+
 
