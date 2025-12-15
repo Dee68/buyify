@@ -36,4 +36,23 @@ def test_category_name_must_be_unique():
     with pytest.raises(IntegrityError):
         Category.objects.create(name="Fashion")
 
+# ===================================
+# Category Product relationship Tests
+# ===================================
+
+@pytest.mark.django_db
+def test_product_can_have_category():
+    category = Category.objects.create(name="Electronics")
+
+    product = Product.objects.create(
+        name="Laptop",
+        description="Gaming laptop",
+        price=1200,
+        stock=5,
+        category=category,
+    )
+
+    assert product.category == category
+    assert category.products.count() == 1
+
 

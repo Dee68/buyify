@@ -8,9 +8,26 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "slug", "created_at")
 
 class ProductSerializer(serializers.ModelSerializer):
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    category_detail = CategorySerializer(source="category", read_only=True)
     class Meta:
         model = Product
-        fields = "__all__"
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "description",
+            "price",
+            "stock",
+            "category",
+            "category_detail",
+            "created_at",
+            "updated_at",
+        )
         read_only_fields = ("id", "slug", "created_at", "updated_at")
 
     def validate_price(self, value):
@@ -27,3 +44,5 @@ class ProductSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Product name cannot be empty.")
         return value
+    
+
