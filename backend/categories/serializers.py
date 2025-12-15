@@ -22,3 +22,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_children(self, obj):
         return CategorySerializer(obj.children.all(), many=True).data
+    
+class CategoryTreeSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+    product_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "product_count", "children"]
+
+    def get_children(self, obj):
+        queryset = obj.children.all()
+        return CategoryTreeSerializer(queryset, many=True).data
