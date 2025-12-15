@@ -6,6 +6,10 @@ from categories.models import Category
 from products.models import Product
 
 @pytest.fixture
+def product(product_factory, category):
+    return product_factory(category=category)
+
+@pytest.fixture
 def product_factory():
     def create_product(**kwargs):
         unique_suffix = uuid.uuid4().hex[:8]
