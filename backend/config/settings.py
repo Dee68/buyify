@@ -45,8 +45,11 @@ INSTALLED_APPS = [
     'users',
     'categories',
     'products',
+    #'django_filter',
     
 ]
+
+INSTALLED_APPS += ["django_filters"]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -101,6 +104,9 @@ REST_FRAMEWORK = {
         "anon": "10/minute",
         "user": "100/minute",
     },
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ),
 }
 
 

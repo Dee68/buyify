@@ -1,6 +1,7 @@
 import pytest # type: ignore
 from django.urls import reverse # type: ignore
 from products.models import Product
+from categories.models import Category
 from rest_framework.test import APIClient # type: ignore
 from rest_framework_simplejwt.tokens import RefreshToken # type: ignore
 

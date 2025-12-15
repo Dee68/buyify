@@ -1,7 +1,8 @@
 import pytest # type: ignore
 from django.urls import reverse # type: ignore
 from products.models import Product
-#from rest_framework.test import APIClient # type: ignore
+from categories.models import Category
+from rest_framework.test import APIClient # type: ignore
 #from rest_framework_simplejwt.tokens import RefreshToken # type: ignore
 
 
@@ -59,4 +60,33 @@ def test_product_ordering_by_price_desc(client):
     results = response.data["results"]
     assert results[0]["price"] == "100.00"
 
+# ==========================
+# 
+# ==========================
+@pytest.mark.django_db
+def test_filter_products_by_category():
+    client = APIClient()
+
+    electronics = Category.objects.create(name="Electronics")
+    books = Category.objects.create(name="Books")
+
+    Product.objects.create(
+        name="Laptop",
+        description="Gaming",
+        price=1000,
+        stock=3,
+        category=electronics,
+    )
+    Product.objects.create(
+        name="Novel",
+        description="Fiction",
+        price=20,
+        stock=10,
+        category=books,
+    )
+
+    response = client.get("/api/products/", {"category": electronics.id})
+
+    assert response.status_code == 200
+    assert response.data["count"] == 1
 

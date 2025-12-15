@@ -4,6 +4,6 @@ from .views import CategoryViewSet
 app_name="categories"
 
 router = DefaultRouter()
-router.register("", CategoryViewSet, basename="categories")
+router.register(r"", CategoryViewSet, basename="categories")
 
 urlpatterns = router.urls
