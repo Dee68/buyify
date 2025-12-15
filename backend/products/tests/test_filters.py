@@ -85,7 +85,7 @@ def test_filter_products_by_category():
         category=books,
     )
 
-    response = client.get("/api/products/", {"category": electronics.id})
+    response = client.get("/api/products/", {"category": "electronics"})
 
     assert response.status_code == 200
     assert response.data["count"] == 1

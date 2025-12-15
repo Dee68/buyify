@@ -51,6 +51,9 @@ INSTALLED_APPS = [
 
 INSTALLED_APPS += ["django_filters"]
 
+INSTALLED_APPS += ["drf_spectacular"]
+
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
@@ -108,6 +111,17 @@ REST_FRAMEWORK = {
         "django_filters.rest_framework.DjangoFilterBackend",
     ),
 }
+
+REST_FRAMEWORK |= {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Buyify API",
+    "DESCRIPTION": "E-commerce API (products, categories, users)",
+    "VERSION": "1.0.0",
+}
+
 
 
 

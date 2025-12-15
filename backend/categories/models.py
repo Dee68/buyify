@@ -13,6 +13,18 @@ class Category(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def get_breadcrumbs(self):
+        breadcrumbs = []
+        current = self
+        while current:
+            breadcrumbs.append({
+                "id": current.id,
+                "name": current.name,
+                "slug": current.slug,
+            })
+            current = current.parent
+        return list(reversed(breadcrumbs))
+
     class Meta:
         ordering = ["name"]
 
