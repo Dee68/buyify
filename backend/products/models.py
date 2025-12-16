@@ -1,4 +1,5 @@
 from django.db import models # type: ignore
+from django.db.models import Min,Sum # type: ignore
 from django.utils.text import slugify # type: ignore
 from categories.models import Category
 
@@ -19,6 +20,30 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    @property
+    def resolved_price(self):
+        active_variants = self.variants.filter(is_active=True)
+        if active_variants.exists():
+            return active_variants.aggregate(
+                min_price=Min("price")
+            )["min_price"]
+        return self.price
+    
+    @property
+    def resolved_stock(self):
+        active_variants = self.variants.filter(is_active=True)
+        if active_variants.exists():
+            return active_variants.aggregate(
+                total_stock=Sum("stock")
+            )["total_stock"] or 0
+        return self.stock
+    
+    @property
+    def is_available(self):
+        return self.resolved_stock > 0
+    
+
 
     def save(self, *args, **kwargs):
         if not self.slug:

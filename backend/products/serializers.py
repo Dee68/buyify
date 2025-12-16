@@ -1,5 +1,5 @@
 from rest_framework import serializers # type: ignore
-from .models import Product,ProductVariant,VariantAttributeValue
+from .models import Product,ProductVariant,VariantAttributeValue,VariantValueAssignment
 from categories.models import Category
 from categories.serializers import CategorySerializer
 
@@ -32,6 +32,12 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    resolved_price = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
+    resolved_stock = serializers.IntegerField(read_only=True)
+    is_available = serializers.BooleanField(read_only=True)
+
     variants = ProductVariantSerializer(many=True, read_only=True)
     category = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
@@ -52,6 +58,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "category_detail",
             "created_at",
             "updated_at",
+            "resolved_price",
+            "resolved_stock",
+            "is_available",
             "is_active",
             "variants",
         )
@@ -80,5 +89,11 @@ class VariantAttributeValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = VariantAttributeValue
         fields = ["attribute", "value"]
+
+class VariantValueAssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VariantValueAssignment
+        fields = ["id", "variant", "attribute_value"]
+
     
 
