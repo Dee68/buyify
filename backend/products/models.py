@@ -20,6 +20,10 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def has_variants(self):
+        return self.variants.filter(is_active=True).exists()
     
     @property
     def resolved_price(self):
@@ -38,6 +42,12 @@ class Product(models.Model):
                 total_stock=Sum("stock")
             )["total_stock"] or 0
         return self.stock
+    
+    @property
+    def aggregated_stock(self):
+        return sum(
+            v.stock for v in self.variants.filter(is_active=True)
+        )
     
     @property
     def is_available(self):

@@ -2,9 +2,19 @@ from rest_framework import serializers # type: ignore
 from .models import Product,ProductVariant,VariantAttributeValue,VariantValueAssignment
 from categories.models import Category
 from categories.serializers import CategorySerializer
+from decimal import Decimal
+from drf_spectacular.utils import extend_schema_field # type: ignore
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
+    """
+    Product variant.
+
+    Notes:
+    - Only active variants affect product price and stock
+    - Inactive variants are ignored in calculations
+    - Admin-only write access
+    """
     attributes = serializers.SerializerMethodField()
 
     class Meta:
@@ -30,6 +40,26 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             for v in values
         ]
 
+class ProductWriteSerializer(serializers.ModelSerializer):
+    price = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0
+    )
+    stock = serializers.IntegerField(min_value=0)
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "name",
+            "description",
+            "price",
+            "stock",
+            "category",
+            "is_active",
+        )
+
 
 class ProductSerializer(serializers.ModelSerializer):
     resolved_price = serializers.DecimalField(
@@ -44,6 +74,21 @@ class ProductSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    price = serializers.DecimalField(
+        source="resolved_price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+        min_value=0,
+        help_text="Resolved price from active variants or base product price",
+    )
+    stock = serializers.IntegerField(
+        source="aggregated_stock",
+        read_only=True,
+        help_text="Aggregated stock from active variants only",
+    )
+
+
     category_detail = CategorySerializer(source="category", read_only=True)
     class Meta:
         model = Product
@@ -66,15 +111,6 @@ class ProductSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "slug", "created_at", "updated_at")
 
-    def validate_price(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Price cannot be negative.")
-        return value
-
-    def validate_stock(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Stock cannot be negative.")
-        return value
 
     def validate_name(self, value):
         if not value.strip():

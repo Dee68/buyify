@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, filters # type: ignore
 from .models import Product
 from django_filters.rest_framework import DjangoFilterBackend # type: ignore
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer,ProductWriteSerializer
 from .permissions import IsAdminOrReadOnly
 from .filters import ProductFilter
 from drf_spectacular.utils import extend_schema, OpenApiParameter # type: ignore
@@ -18,8 +18,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter # type: ignore
 )
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all().order_by('-created_at')
-    serializer_class = ProductSerializer
+    queryset = Product.objects.all()
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [
         DjangoFilterBackend,
@@ -28,6 +27,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         ]
 
     filterset_class = ProductFilter
+
+    def get_serializer_class(self):
+        if self.action in ("create", "update", "partial_update"):
+            return ProductWriteSerializer
+        return ProductSerializer
+    
     search_fields = ['name', 'description']
     ordering_fields = ['price', 'created_at']
 

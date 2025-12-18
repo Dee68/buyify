@@ -1,5 +1,5 @@
 import pytest # type: ignore
-from products.serializers import ProductSerializer
+from products.serializers import ProductSerializer,ProductWriteSerializer
 from products.models import Product
 from categories.models import Category
 
@@ -22,7 +22,7 @@ def test_product_serializer_valid_data(valid_product_data):
 def test_product_serializer_negative_price(valid_product_data):
     valid_product_data["price"] = "-5.00"
 
-    serializer = ProductSerializer(data=valid_product_data)
+    serializer = ProductWriteSerializer(data=valid_product_data)
 
     assert not serializer.is_valid()
     assert "price" in serializer.errors
@@ -31,7 +31,7 @@ def test_product_serializer_negative_price(valid_product_data):
 def test_product_serializer_negative_stock(valid_product_data):
     valid_product_data["stock"] = -1
 
-    serializer = ProductSerializer(data=valid_product_data)
+    serializer = ProductWriteSerializer(data=valid_product_data)
 
     assert not serializer.is_valid()
     assert "stock" in serializer.errors
@@ -52,7 +52,7 @@ def test_product_serializer_accepts_category_id(valid_product_data):
     category = Category.objects.create(name="Books")
     valid_product_data["category"] = category.id
 
-    serializer = ProductSerializer(data=valid_product_data)
+    serializer = ProductWriteSerializer(data=valid_product_data)
     assert serializer.is_valid(), serializer.errors
 
     product = serializer.save()
