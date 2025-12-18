@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, filters # type: ignore
+from rest_framework import viewsets, filters # type: ignore
 from .models import Product
 from django_filters.rest_framework import DjangoFilterBackend # type: ignore
 from .serializers import ProductSerializer,ProductWriteSerializer

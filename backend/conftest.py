@@ -3,7 +3,33 @@ import uuid
 from django.contrib.auth import get_user_model # type: ignore
 from rest_framework.test import APIClient # type: ignore
 from categories.models import Category
-from products.models import Product
+from products.models import Product,ProductVariant
+
+
+
+@pytest.fixture
+def product_variant(product):
+    return ProductVariant.objects.create(
+        product=product,
+        sku="SKU-001",
+        price=100,
+        stock=10,
+        is_active=True,
+    )
+
+
+@pytest.fixture
+def order_factory(db):
+    from orders.models import Order
+
+    def factory(**kwargs):
+        return Order.objects.create(
+            user=kwargs.get("user"),
+            total_price=kwargs.get("total_price", 0),
+        )
+
+    return factory
+
 
 @pytest.fixture
 def product(product_factory, category):
@@ -34,6 +60,13 @@ User = get_user_model()
 @pytest.fixture
 def user(db):
     return User.objects.create_user(email="user@test.com", password="pass123")
+
+@pytest.fixture
+def another_user(db):
+    return User.objects.create_user(
+        email="another@test.com",
+        password="password123",
+    )
 
 @pytest.fixture
 def admin_user(db):

@@ -4,11 +4,13 @@ from .views import CartView,CartItemViewSet
 
 app_name="cart"
 
-router = DefaultRouter()
-router.register(r"items", CartItemViewSet, basename="cart-items")
+cart_router = DefaultRouter()
+cart_router.register(r"items", CartItemViewSet, basename="cart-items")
+
+
 
 urlpatterns = [
     path("", CartView.as_view(), name="cart"),
 ]
 
-urlpatterns += router.urls
+urlpatterns += cart_router.urls
