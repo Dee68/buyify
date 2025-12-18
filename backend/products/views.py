@@ -18,7 +18,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter # type: ignore
 )
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.all().order_by("-created_at")
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [
         DjangoFilterBackend,
