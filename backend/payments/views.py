@@ -1,6 +1,7 @@
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status # type: ignore
+from django.conf import settings
 from orders.models import Order
 from .gateway import stripe
 import json
@@ -12,20 +13,17 @@ logger = logging.getLogger(__name__)
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-    endpoint_secret = getattr(stripe, "WEBHOOK_SECRET", None)
+    #endpoint_secret = getattr(stripe, "WEBHOOK_SECRET", None)
+    event=None
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-    except ValueError as e:
-        # Invalid payload
-        logger.error(f"Invalid payload: {e}")
-        return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
-        logger.error(f"Invalid signature: {e}")
-        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError:
+        return JsonResponse({"error": "Invalid signature"}, status=400)
+    except ValueError:
+        return JsonResponse({"error": "Invalid payload"}, status=400)
 
     # Handle the event
     if event["type"] == "payment_intent.succeeded":
@@ -33,19 +31,11 @@ def stripe_webhook(request):
         order_id = intent["metadata"].get("order_id")
         try:
             order = Order.objects.get(id=order_id)
+            order.payment_intent_id = intent["id"]
             order.status = Order.STATUS_PAID
             order.save()
         except Order.DoesNotExist:
-            logger.warning(f"Order {order_id} not found for payment intent")
-    elif event["type"] == "payment_intent.payment_failed":
-        intent = event["data"]["object"]
-        order_id = intent["metadata"].get("order_id")
-        try:
-            order = Order.objects.get(id=order_id)
-            order.status = Order.STATUS_CANCELLED
-            order.save()
-        except Order.DoesNotExist:
-            logger.warning(f"Order {order_id} not found for failed payment")
+            pass  # optionally log the missing order
 
-    return JsonResponse({"status": "success"}, status=status.HTTP_200_OK)
+    return JsonResponse({"status": "success"}, status=200)
 

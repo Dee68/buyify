@@ -83,15 +83,16 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
         # Amount in cents
-        amount_cents = int(order.total_price * 100)
+        #amount_cents = int(order.total_price * 100)
+        gateway = StripeGateway()
 
         # Create or retrieve PaymentIntent
         if order.payment_intent_id:
-            intent = StripeGateway.retrieve_payment_intent(order.payment_intent_id)
+            intent = gateway.retrieve_payment_intent(order.payment_intent_id)
         else:
-            intent = StripeGateway.create_payment_intent(
-                amount=amount_cents,
-                currency="usd",
+            intent = gateway.create_payment_intent(
+                amount=order.total_price,
+                #currency="usd",
                 metadata={"order_id": order.id},
             )
             order.payment_intent_id = intent.id
