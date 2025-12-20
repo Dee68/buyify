@@ -1,10 +1,12 @@
-from rest_framework import viewsets, permissions, status # type: ignore
+from django.db import transaction
+from django.db.models import F
+from rest_framework.exceptions import ValidationError # type: ignore
+from rest_framework import permissions,status,viewsets # type: ignore
+from products.models import ProductVariant
+from cart.models import get_or_create_cart,Cart
 from rest_framework.response import Response # type: ignore
-from django.db import transaction # type: ignore
-
-from .models import Order, OrderItem
 from .serializers import OrderSerializer
-from cart.models import CartItem
+from .models import Order,OrderItem
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -20,9 +22,11 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        cart_items = CartItem.objects.select_related(
-            "variant", "variant__product"
-        ).filter(cart__user=request.user)
+        cart = get_or_create_cart(request.user)
+        cart_items = (
+            cart.items
+            .select_related("variant")
+        )
 
         if not cart_items.exists():
             return Response(
@@ -30,28 +34,52 @@ class OrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        
+        # 1. Lock all variants involved in checkout
+        variant_ids = cart_items.values_list("variant_id", flat=True)
 
-        total_price = 0
+        variants = (
+            ProductVariant.objects
+            .select_for_update()
+            .filter(id__in=variant_ids, is_active=True)
+        )
 
+        variant_map = {v.id: v for v in variants}
+
+        # 2. Validate stock under lock
         for item in cart_items:
-            unit_price = item.variant.price
-            total_price += unit_price * item.quantity
+            variant = variant_map.get(item.variant_id)
 
-        order = Order.objects.create(user=request.user,total_price=total_price,)
+            if not variant:
+                raise ValidationError("Variant unavailable.")
 
-        OrderItem.objects.create(
+            if item.quantity > variant.stock:
+                raise ValidationError(
+                    f"Insufficient stock for {variant.sku}."
+                )
+
+        # 3. Create order with frozen price
+        order = Order.objects.create(
+            user=request.user,
+            total_price=cart.total_price,
+        )
+
+        # 4. Create order items and deduct stock
+        for item in cart_items:
+            variant = variant_map[item.variant_id]
+
+            OrderItem.objects.create(
                 order=order,
-                variant=item.variant,
+                variant=variant,
                 quantity=item.quantity,
-                unit_price=unit_price,
+                unit_price=variant.price,
             )
 
-        order.total_price = total_price
-        order.save()
+            variant.stock = F("stock") - item.quantity
+            variant.save(update_fields=["stock"])
 
-        # Clear cart
+        # 5. Clear cart
         cart_items.delete()
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
