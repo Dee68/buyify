@@ -1,6 +1,8 @@
 from django.conf import settings # type: ignore
 from django.db import models # type: ignore
 from products.models import ProductVariant
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 class Order(models.Model):
@@ -26,6 +28,33 @@ class Order(models.Model):
     )
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
+    payment_intent_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    def mark_paid(self, payment_intent_id: str):
+        if self.status != self.STATUS_PENDING:
+            raise ValidationError("Order cannot be paid")
+
+        self.status = self.STATUS_PAID
+        self.payment_intent_id = payment_intent_id
+        self.paid_at = timezone.now()
+        self.save(update_fields=[
+            "status",
+            "payment_intent_id",
+            "paid_at",
+        ])
+
+    def cancel(self):
+        if self.status != self.STATUS_PENDING:
+            raise ValidationError("Only pending orders can be cancelled")
+
+        self.status = self.STATUS_CANCELLED
+        self.save(update_fields=["status"])
 
     def __str__(self):
         return f"Order #{self.id} ({self.user})"

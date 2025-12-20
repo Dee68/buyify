@@ -19,13 +19,14 @@ def product_variant(product):
 
 
 @pytest.fixture
-def order_factory(db):
+def order_factory(user):
     from orders.models import Order
 
     def factory(**kwargs):
         return Order.objects.create(
-            user=kwargs.get("user"),
+            user=kwargs.get("user", user),
             total_price=kwargs.get("total_price", 0),
+            status=kwargs.get("status", Order.STATUS_PENDING),
         )
 
     return factory
