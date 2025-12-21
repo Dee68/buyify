@@ -39,6 +39,7 @@ class Order(models.Model):
         db_index=True,
     )
     refund_id = models.CharField(max_length=255, blank=True, null=True)
+    dispute_id = models.CharField(max_length=255, blank=True, null=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
     def mark_paid(self, payment_intent_id: str):
