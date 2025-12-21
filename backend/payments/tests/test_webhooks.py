@@ -59,3 +59,49 @@ def test_webhook_invalid_signature(client, mocker):
     )
 
     assert response.status_code == 400
+
+@pytest.mark.django_db
+def test_full_stripe_flow(client, order_factory, mocker):
+    order = order_factory(status=Order.STATUS_PENDING)
+
+    intent_id = "pi_test_123"
+
+    mocker.patch(
+        "payments.gateway.stripe.PaymentIntent.create",
+        return_value=type(
+            "Intent",
+            (),
+            {"id": intent_id}
+        )()
+    )
+
+    payload = {
+        "id": "evt_test_123",
+        "type": "payment_intent.succeeded",
+        "data": {
+            "object": {
+                "id": intent_id,
+                "metadata": {
+                    "order_id": str(order.id)
+                }
+            }
+        }
+    }
+
+    mocker.patch(
+        "stripe.Webhook.construct_event",
+        return_value=payload
+    )
+
+    response = client.post(
+        reverse("stripe-webhook"),
+        data=json.dumps(payload),
+        content_type="application/json",
+        HTTP_STRIPE_SIGNATURE="test",
+    )
+
+    order.refresh_from_db()
+
+    assert response.status_code == 200
+    assert order.status == Order.STATUS_PAID
+    assert order.payment_intent_id == intent_id
