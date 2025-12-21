@@ -105,3 +105,45 @@ def test_full_stripe_flow(client, order_factory, mocker):
     assert response.status_code == 200
     assert order.status == Order.STATUS_PAID
     assert order.payment_intent_id == intent_id
+
+@pytest.mark.django_db
+def test_webhook_idempotent_delivery(client, order_factory, mocker):
+    order = order_factory(status=Order.STATUS_PENDING)
+
+    payload = {
+        "id": "evt_duplicate_123",
+        "type": "payment_intent.succeeded",
+        "data": {
+            "object": {
+                "id": "pi_test_123",
+                "metadata": {"order_id": str(order.id)},
+            }
+        },
+    }
+
+    mocker.patch(
+        "stripe.Webhook.construct_event",
+        return_value=payload
+    )
+
+    # First delivery
+    response1 = client.post(
+        reverse("stripe-webhook"),
+        data=json.dumps(payload),
+        content_type="application/json",
+        HTTP_STRIPE_SIGNATURE="test",
+    )
+
+    # Duplicate delivery
+    response2 = client.post(
+        reverse("stripe-webhook"),
+        data=json.dumps(payload),
+        content_type="application/json",
+        HTTP_STRIPE_SIGNATURE="test",
+    )
+
+    order.refresh_from_db()
+
+    assert response1.status_code == 200
+    assert response2.status_code == 200
+    assert order.status == Order.STATUS_PAID
