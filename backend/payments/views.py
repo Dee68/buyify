@@ -13,51 +13,53 @@ def stripe_webhook(request):
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
     try:
-        if settings.STRIPE_VERIFY_WEBHOOK_SIGNATURE:
+        if getattr(settings, "STRIPE_VERIFY_WEBHOOK_SIGNATURE", True):
             event = stripe.Webhook.construct_event(
-                payload,
-                sig_header,
-                settings.STRIPE_WEBHOOK_SECRET,
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
             )
         else:
             event = json.loads(payload)
-
     except (ValueError, stripe.error.SignatureVerificationError):
         return HttpResponseBadRequest()
 
-    event_id = event.get("id")
-    event_type = event.get("type")
-
-    if not event_id or not event_type:
+    data_object = event.get("data", {}).get("object")
+    if not data_object:
         return HttpResponseBadRequest()
 
-    # 🔐 Idempotency guard
-    if StripeEvent.objects.filter(event_id=event_id).exists():
-        return HttpResponse(status=200)
+    # Handle payment_intent.succeeded
+    if event["type"] == "payment_intent.succeeded":
+        order_id = data_object.get("metadata", {}).get("order_id")
+        if not order_id:
+            return HttpResponseBadRequest()
 
-    # Persist event atomically
-    with transaction.atomic():
-        StripeEvent.objects.create(
-            event_id=event_id,
-            event_type=event_type,
-        )
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return HttpResponseBadRequest()
 
-        if event_type == "payment_intent.succeeded":
-            intent = event["data"]["object"]
-            order_id = intent.get("metadata", {}).get("order_id")
+        order.payment_intent_id = data_object["id"]
+        order.status = Order.STATUS_PAID
+        order.save(update_fields=["payment_intent_id", "status"])
 
-            if not order_id:
-                return HttpResponseBadRequest()
+    # Handle refunds
+    elif event["type"] == "charge.refunded":
+        try:
+            order = Order.objects.get(payment_intent_id=data_object.get("payment_intent"))
+        except Order.DoesNotExist:
+            return HttpResponseBadRequest()
 
-            try:
-                order = Order.objects.select_for_update().get(id=order_id)
-            except Order.DoesNotExist:
-                return HttpResponseBadRequest()
+        order.status = Order.STATUS_REFUNDED
+        order.refund_id = data_object["refunds"]["data"][0]["id"]
+        order.save(update_fields=["status", "refund_id"])
 
-            # ✅ State-safe update
-            if order.status != Order.STATUS_PAID:
-                order.status = Order.STATUS_PAID
-                order.payment_intent_id = intent["id"]
-                order.save(update_fields=["status", "payment_intent_id"])
+    # Handle disputes
+    elif event["type"] == "charge.dispute.created":
+        try:
+            order = Order.objects.get(payment_intent_id=data_object.get("payment_intent"))
+        except Order.DoesNotExist:
+            return HttpResponseBadRequest()
+
+        order.status = Order.STATUS_DISPUTED
+        order.save(update_fields=["status"])
 
     return HttpResponse(status=200)

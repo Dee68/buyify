@@ -1,8 +1,8 @@
 import stripe  # type: ignore
-from django.conf import settings
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.conf import settings # type: ignore
+from django.http import HttpResponse # type: ignore
+from django.views.decorators.csrf import csrf_exempt # type: ignore
+from django.views.decorators.http import require_POST # type: ignore
 #from django.db import transaction
 
 from orders.models import Order
@@ -33,6 +33,37 @@ def stripe_webhook(request):
 
     elif event_type == "payment_intent.payment_failed":
         _handle_payment_intent_failed(data)
+
+    elif event_type == "charge.dispute.created":
+        dispute = event["data"]["object"]
+        payment_intent_id = dispute.get("payment_intent")
+
+        try:
+            order = Order.objects.select_for_update().get(
+                payment_intent_id=payment_intent_id
+            )
+        except Order.DoesNotExist:
+            return HttpResponse(status=400)
+
+        order.status = Order.STATUS_DISPUTED
+        order.save(update_fields=["status"])
+
+
+    elif event_type == "charge.refunded":
+        charge = event["data"]["object"]
+        payment_intent_id = charge.get("payment_intent")
+
+    try:
+        order = Order.objects.select_for_update().get(
+            payment_intent_id=payment_intent_id
+        )
+    except Order.DoesNotExist:
+        return HttpResponse(status=400)
+
+    order.status = Order.STATUS_REFUNDED
+    order.refund_id = charge["refunds"]["data"][0]["id"]
+    order.save(update_fields=["status", "refund_id"])
+
 
     return HttpResponse(status=200)
 

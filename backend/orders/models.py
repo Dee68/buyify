@@ -1,19 +1,23 @@
 from django.conf import settings # type: ignore
 from django.db import models # type: ignore
 from products.models import ProductVariant
-from django.utils import timezone
-from django.core.exceptions import ValidationError
+from django.utils import timezone # type: ignore
+from django.core.exceptions import ValidationError # type: ignore
 
 
 class Order(models.Model):
     STATUS_PENDING = "pending"
     STATUS_PAID = "paid"
     STATUS_CANCELLED = "cancelled"
+    STATUS_REFUNDED = "refunded"
+    STATUS_DISPUTED = "disputed"
 
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
         (STATUS_PAID, "Paid"),
         (STATUS_CANCELLED, "Cancelled"),
+        (STATUS_REFUNDED, "Refunded"),
+        (STATUS_DISPUTED, "Disputed"),
     ]
 
     user = models.ForeignKey(
@@ -34,6 +38,7 @@ class Order(models.Model):
         blank=True,
         db_index=True,
     )
+    refund_id = models.CharField(max_length=255, blank=True, null=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
     def mark_paid(self, payment_intent_id: str):
