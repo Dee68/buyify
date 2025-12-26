@@ -1,41 +1,66 @@
+"use client";
+
+import { useState } from "react";
+import { register } from "@/lib/auth";
+
 export default function RegisterPage() {
+  const [form, setForm] = useState({ email: "", password: "", password2: "" });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    try {
+      await register(form);
+      setSuccess("Account created successfully. You can now log in.");
+      setForm({ email: "", password: "", password2: "" });
+    } catch (err: any) {
+      setError(JSON.stringify(err));
+    }
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 text-center">Create your account</h1>
+    <div className="max-w-md mx-auto mt-20 p-6 border rounded">
+      <h1 className="text-2xl mb-4">Register</h1>
 
-      <form className="space-y-4">
-        <input
-          type="text"
-          placeholder="Full Name"
-          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="email"
           placeholder="Email"
-          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={form.email}
+          onChange={e => setForm({ ...form, email: e.target.value })}
+          className="w-full p-2 border rounded"
+          required
         />
 
         <input
           type="password"
           placeholder="Password"
-          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={form.password}
+          onChange={e => setForm({ ...form, password: e.target.value })}
+          className="w-full p-2 border rounded"
+          required
         />
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-        >
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={form.password2}
+          onChange={e => setForm({ ...form, password2: e.target.value })}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        <button className="w-full bg-black text-white p-2 rounded">
           Register
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-center text-gray-600">
-        Already have an account?{" "}
-        <a href="/login" className="text-blue-600 hover:underline">
-          Login
-        </a>
-      </p>
+      {error && <p className="text-red-600 mt-4">{error}</p>}
+      {success && <p className="text-green-600 mt-4">{success}</p>}
     </div>
   );
 }

@@ -1,14 +1,16 @@
+"use client";
+import { useAuth } from "./context/AuthContext";
+import Link from "next/link";
+import Navbar from "@/components/Navbar";
+
 export default function HomePage() {
+  const { user, loading, logout } = useAuth();
+
+  if (loading) return null;
   return (
     <main className="min-h-screen">
-      <header className="flex items-center justify-between px-8 py-6 bg-white shadow-sm">
-        <div className="text-xl font-bold tracking-tight">Buyify</div>
-        <nav className="space-x-6 text-sm font-medium">
-          <a href="#" className="hover:text-blue-600">Features</a>
-          <a href="#" className="hover:text-blue-600">Pricing</a>
-          <a href="/login" className="hover:text-blue-600">Login</a>
-        </nav>
-      </header>
+     <Navbar />
+
 
       <section className="flex flex-col items-center justify-center text-center px-6 py-32 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
         <h1 className="text-5xl font-extrabold tracking-tight mb-6">
