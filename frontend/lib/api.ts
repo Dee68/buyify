@@ -1,18 +1,50 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = "http://localhost:8000/api";
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
+async function refreshToken() {
+  const refresh = localStorage.getItem("refresh");
+  if (!refresh) return null;
+
+  const res = await fetch(`${API}/auth/refresh/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh }),
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw err;
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    return null;
   }
 
-  return res.json();
+  const data = await res.json();
+  localStorage.setItem("access", data.access);
+  return data.access;
+}
+
+export async function apiFetch(url: string, options: RequestInit = {}) {
+  let access = localStorage.getItem("access");
+
+  const res = await fetch(`${API}${url}`, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: access ? `Bearer ${access}` : "",
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (res.status !== 401) return res;
+
+  // Try refresh once
+  const newAccess = await refreshToken();
+  if (!newAccess) throw new Error("Session expired");
+
+  return fetch(`${API}${url}`, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${newAccess}`,
+      "Content-Type": "application/json",
+    },
+  });
 }

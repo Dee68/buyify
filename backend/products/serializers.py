@@ -82,11 +82,16 @@ class ProductSerializer(serializers.ModelSerializer):
         min_value=0,
         help_text="Resolved price from active variants or base product price",
     )
-    stock = serializers.IntegerField(
-        source="aggregated_stock",
-        read_only=True,
-        help_text="Aggregated stock from active variants only",
-    )
+    # stock = serializers.IntegerField(
+    #     source="aggregated_stock",
+    #     read_only=True,
+    #     help_text="Aggregated stock from active variants only",
+    # )
+    stock = serializers.SerializerMethodField()
+
+    def get_stock(self, obj):
+        # Return the base stock if no variants exist, otherwise include variants
+        return obj.stock + obj.aggregated_stock
 
 
     category_detail = CategorySerializer(source="category", read_only=True)

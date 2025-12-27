@@ -42,6 +42,7 @@ function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="px-6 py-6 text-xl font-bold">Buyify</div>
         <nav className="flex flex-col gap-1 px-4 text-sm">
           <NavLink href="/dashboard">Overview</NavLink>
+          <NavLink href="/dashboard/categories">Categories</NavLink>
           <NavLink href="/dashboard/products">Products</NavLink>
           <NavLink href="/dashboard/orders">Orders</NavLink>
           <NavLink href="/dashboard/customers">Customers</NavLink>
