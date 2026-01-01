@@ -21,6 +21,8 @@ export default function LoginPage() {
   }
 
   return (
+    <main className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
     <form onSubmit={handleSubmit} className="max-w-sm mx-auto mt-20 space-y-4">
       <h1 className="text-xl font-bold">Login</h1>
       {error && <p className="text-red-600">{error}</p>}
@@ -28,6 +30,8 @@ export default function LoginPage() {
       <input className="w-full border p-2" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
       <button className="w-full bg-blue-600 text-white py-2 rounded">Login</button>
     </form>
+    </div>
+    </main>
   );
 }
 

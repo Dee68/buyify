@@ -37,7 +37,9 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
 
   // Try refresh once
   const newAccess = await refreshToken();
-  if (!newAccess) throw new Error("Session expired");
+  if (!newAccess) {
+    return null;
+  }//throw new Error("Session expired");
 
   return fetch(`${API}${url}`, {
     ...options,

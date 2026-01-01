@@ -7,7 +7,7 @@ export default function LogoutButton() {
     <button
       onClick={() => {
         logout();
-        window.location.href = "/login";
+        window.location.href = "/";
       }}
       className="text-sm text-red-600"
     >

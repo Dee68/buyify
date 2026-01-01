@@ -3,13 +3,12 @@
 import { ReactNode,useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth, AuthProvider } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function DashboardLayoutWrapper({ children }: { children: ReactNode }) {
   return (
-    <AuthProvider>
+  
       <DashboardLayout>{children}</DashboardLayout>
-    </AuthProvider>
   );
 }
 
@@ -19,7 +18,7 @@ function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading && user === null) {
-      router.replace("/login");
+      router.replace("/");
     }
   }, [user, loading, router]);
 

@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     setUser(null);
-    router.push("/dashboard");
+    router.push("/");
   }
 
   return (

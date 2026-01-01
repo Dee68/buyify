@@ -24,3 +24,12 @@ export async function login(data: { email: string; password: string }) {
 export function logout() {
   document.cookie = "token=; path=/; Max-Age=0";
 }
+
+// export function handleSessionExpired() {
+//   console.warn("Session expired — logging out");
+
+//   localStorage.removeItem("access");
+//   localStorage.removeItem("refresh");
+
+//   window.location.href = "/login";
+// }
